@@ -1,0 +1,197 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+  relationMode = "prisma"
+
+
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model activities {
+  id           Int       @id @default(autoincrement())
+  projectID    Int?
+  ActivityType String?   @db.VarChar(255)
+  Description  String?   @db.Text
+  DateTime     DateTime? @db.DateTime(0)
+  projects     projects? @relation(fields: [projectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "activities_ibfk_1")
+
+  @@index([projectID], map: "projectID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model authorizations {
+  id             Int            @id @default(autoincrement())
+  CollaboratorID Int?
+  ProjectID      Int?
+  Permission     String?        @db.VarChar(50)
+  collaborators  collaborators? @relation(fields: [CollaboratorID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "authorizations_ibfk_1")
+  projects       projects?      @relation(fields: [ProjectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "authorizations_ibfk_2")
+
+  @@index([CollaboratorID], map: "CollaboratorID")
+  @@index([ProjectID], map: "ProjectID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model collaborators {
+  id             Int              @id @default(autoincrement())
+  ProjectID      Int?
+  UserID         Int?
+  Role           String?          @db.VarChar(50)
+  authorizations authorizations[]
+  projects       projects?        @relation(fields: [ProjectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "collaborators_ibfk_1")
+  users          users?           @relation(fields: [UserID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "collaborators_ibfk_2")
+
+  @@index([ProjectID], map: "ProjectID")
+  @@index([UserID], map: "UserID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model districts {
+  id              Int         @id @default(autoincrement())
+  RegionID        Int?
+  Name            String?     @db.VarChar(255)
+  Description     String?     @db.Text
+  Characteristics String?     @db.LongText
+  regions         regions?    @relation(fields: [RegionID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "districts_ibfk_1")
+  locations       locations[]
+
+  @@index([RegionID], map: "RegionID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model locations {
+  id          Int        @id @default(autoincrement())
+  DistrictID  Int?
+  Coordinates String?    @db.LongText
+  Occupied    Boolean?
+  ProjectID   Int?
+  districts   districts? @relation(fields: [DistrictID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "locations_ibfk_1")
+  projects    projects?  @relation(fields: [ProjectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "locations_ibfk_2")
+
+  @@index([DistrictID], map: "DistrictID")
+  @@index([ProjectID], map: "ProjectID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model modules_extensions {
+  id               Int       @id @default(autoincrement())
+  Name             String?   @db.VarChar(255)
+  Description      String?   @db.Text
+  Version          String?   @db.VarChar(50)
+  InstallationDate DateTime? @db.DateTime(0)
+  Active           Boolean?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notifications {
+  id       Int       @id @default(autoincrement())
+  UserID   Int?
+  Type     String?   @db.VarChar(50)
+  Message  String?   @db.Text
+  DateTime DateTime? @db.DateTime(0)
+  Read     Boolean?
+  users    users?    @relation(fields: [UserID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "notifications_ibfk_1")
+
+  @@index([UserID], map: "UserID")
+}
+
+model projects {
+  id               Int              @id @default(autoincrement())
+  Name             String?          @db.VarChar(255)
+  Description      String?          @db.Text
+  UserID           Int?
+  CreationDate     DateTime?        @db.DateTime(0)
+  LastModification DateTime?        @db.DateTime(0)
+  Status           projects_Status?
+  activities       activities[]
+  authorizations   authorizations[]
+  collaborators    collaborators[]
+  locations        locations[]
+  users            users            @relation(fields: [id], references: [id], onUpdate: Restrict, map: "projects_ibfk_1")
+  statistic        statistic[]
+  versions         versions[]
+}
+
+model regions {
+  id              Int         @id
+  mapID           Int?
+  Name            String?     @db.VarChar(255)
+  Description     String?     @db.VarChar(255)
+  Characteristics String?     @db.LongText
+  districts       districts[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model statistic {
+  id            Int       @id @default(autoincrement())
+  ProjectID     Int?
+  StatisticType String?   @db.VarChar(50)
+  Value         String?   @db.LongText
+  DateTime      DateTime? @db.DateTime(0)
+  projects      projects? @relation(fields: [ProjectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "statistic_ibfk_1")
+
+  @@index([ProjectID], map: "ProjectID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_preferences {
+  id            Int     @id @default(autoincrement())
+  UserID        Int?
+  KeyUserPref   String? @db.VarChar(255)
+  ValueUserPref String? @db.LongText
+  users         users?  @relation(fields: [UserID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "user_preferences_ibfk_1")
+
+  @@index([UserID], map: "UserID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model users {
+  id               Int                @id @default(autoincrement())
+  Name             String?            @db.VarChar(255)
+  Email            String?            @unique(map: "Email") @db.VarChar(255)
+  Password         String?            @db.VarChar(255)
+  RegistrationDate DateTime?          @db.DateTime(0)
+  LastLogin        DateTime?          @db.DateTime(0)
+  Role             String?            @db.VarChar(255)
+  Preferences      String?            @db.LongText
+  collaborators    collaborators[]
+  notifications    notifications[]
+  projects         projects?
+  user_preferences user_preferences[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model versions {
+  id            Int       @id @default(autoincrement())
+  projectID     Int?
+  VersionNumber String?   @db.VarChar(255)
+  Changes       String?   @db.Text
+  VersionDate   DateTime? @db.DateTime(0)
+  projects      projects? @relation(fields: [projectID], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "versions_ibfk_1")
+
+  @@index([projectID], map: "projectID")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model world_map {
+  id                   Int       @id @default(autoincrement())
+  Name                 String?   @db.VarChar(255)
+  CreationDate         DateTime? @db.DateTime(0)
+  Capacity             Int?
+  EnvironmentType      String?   @db.VarChar(50)
+  Status               String?   @db.VarChar(50)
+  AdditionalProperties String?   @db.LongText
+  Name_ShortID         String?   @db.VarChar(255)
+}
+
+enum projects_Status {
+  In_Progress @map("In Progress")
+  Completed
+  Pending
+  Cancelled
+  Test
+}
